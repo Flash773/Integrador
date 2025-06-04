@@ -1,16 +1,111 @@
 <?php
-$frase="Hola Mundo";
-echo $frase;
-
+$conexion = new mysqli("localhost", "root", "", "visitas_db");
+if ($conexion->connect_error) {
+    die("Error de conexión: " . $conexion->connect_error);
+}
 ?>
+<!DOCTYPE html>
 <html>
-<h1>"INICIO"<h1>
-
-<ln style="color:Tomato;">hola<ln>
-
-<ln style = "color:Black;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-apple" viewBox="0 0 16 16">
-  <path d="M11.182.008C11.148-.03 9.923.023 8.857 1.18c-1.066 1.156-.902 2.482-.878 2.516s1.52.087 2.475-1.258.762-2.391.728-2.43m3.314 11.733c-.048-.096-2.325-1.234-2.113-3.422s1.675-2.789 1.698-2.854-.597-.79-1.254-1.157a3.7 3.7 0 0 0-1.563-.434c-.108-.003-.483-.095-1.254.116-.508.139-1.653.589-1.968.607-.316.018-1.256-.522-2.267-.665-.647-.125-1.333.131-1.824.328-.49.196-1.422.754-2.074 2.237-.652 1.482-.311 3.83-.067 4.56s.625 1.924 1.273 2.796c.576.984 1.34 1.667 1.659 1.899s1.219.386 1.843.067c.502-.308 1.408-.485 1.766-.472.357.013 1.061.154 1.782.539.571.197 1.111.115 1.652-.105.541-.221 1.324-1.059 2.238-2.758q.52-1.185.473-1.282"/>
-  <path d="M11.182.008C11.148-.03 9.923.023 8.857 1.18c-1.066 1.156-.902 2.482-.878 2.516s1.52.087 2.475-1.258.762-2.391.728-2.43m3.314 11.733c-.048-.096-2.325-1.234-2.113-3.422s1.675-2.789 1.698-2.854-.597-.79-1.254-1.157a3.7 3.7 0 0 0-1.563-.434c-.108-.003-.483-.095-1.254.116-.508.139-1.653.589-1.968.607-.316.018-1.256-.522-2.267-.665-.647-.125-1.333.131-1.824.328-.49.196-1.422.754-2.074 2.237-.652 1.482-.311 3.83-.067 4.56s.625 1.924 1.273 2.796c.576.984 1.34 1.667 1.659 1.899s1.219.386 1.843.067c.502-.308 1.408-.485 1.766-.472.357.013 1.061.154 1.782.539.571.197 1.111.115 1.652-.105.541-.221 1.324-1.059 2.238-2.758q.52-1.185.473-1.282"/>
-</svg><ln>
-
+<head>
+    <title>Registro de Visitas</title>
+</head>
+<body>
+    <h2>Formulario de Ingreso</h2>
+    <form action="registrar.php" method="post">
+        <input type="text" name="nombre" placeholder="Nombre" required><br>
+        <input type="text" name="apellido" placeholder="Apellido" required><br>
+        <input type="text" name="dni" placeholder="DNI" required><br>
+        <input type="text" name="motivo" placeholder="Motivo de la visita" required><br>
+        <input type="text" name="persona" placeholder="Persona a la que visita" required><br>
+        <input type="submit" value="Registrar entrada">
+    </form>
+    <br><a href="visitas.php">Ver visitas</a>
+</body>
 </html>
+<?php
+include 'conexion.php';
+
+$nombre = $_POST['nombre'];
+$apellido = $_POST['apellido'];
+$dni = $_POST['dni'];
+$motivo = $_POST['motivo'];
+$persona = $_POST['persona'];
+$hora_ingreso = date("Y-m-d H:i:s");
+
+$sql = "INSERT INTO visitas (nombre, apellido, dni, motivo, persona_visita, hora_ingreso)
+        VALUES ('$nombre', '$apellido', '$dni', '$motivo', '$persona', '$hora_ingreso')";
+
+if ($conexion->query($sql)) {
+    echo "Visita registrada. <a href='index.php'>Volver</a>";
+} else {
+    echo "Error: " . $conexion->error;
+}
+?>
+<?php
+include 'conexion.php';
+
+$id = $_GET['id'];
+$hora_egreso = date("Y-m-d H:i:s");
+
+$sql = "UPDATE visitas SET hora_egreso = '$hora_egreso' WHERE id = $id";
+
+if ($conexion->query($sql)) {
+    echo "Salida registrada. <a href='visitas.php'>Volver</a>";
+} else {
+    echo "Error: " . $conexion->error;
+}
+?>
+<?php
+include 'conexion.php';
+
+$filtro = isset($_GET['filtro']) ? $_GET['filtro'] : '';
+$consulta = "SELECT * FROM visitas WHERE 
+            nombre LIKE '%$filtro%' 
+            OR apellido LIKE '%$filtro%' 
+            OR DATE(hora_ingreso) = '$filtro'
+            ORDER BY hora_ingreso DESC";
+
+$resultado = $conexion->query($consulta);
+?>
+
+<form method="get">
+    <input type="text" name="filtro" placeholder="Buscar por nombre o fecha (AAAA-MM-DD)" value="<?= $filtro ?>">
+    <input type="submit" value="Filtrar">
+</form>
+
+<table border="1">
+    <tr>
+        <th>Nombre</th><th>Apellido</th><th>DNI</th><th>Motivo</th><th>Visita a</th><th>Ingreso</th><th>Egreso</th><th>Acción</th>
+    </tr>
+    <?php while($fila = $resultado->fetch_assoc()): ?>
+        <tr>
+            <td><?= $fila['nombre'] ?></td>
+            <td><?= $fila['apellido'] ?></td>
+            <td><?= $fila['dni'] ?></td>
+            <td><?= $fila['motivo'] ?></td>
+            <td><?= $fila['persona_visita'] ?></td>
+            <td><?= $fila['hora_ingreso'] ?></td>
+            <td><?= $fila['hora_egreso'] ?? '---' ?></td>
+            <td>
+                <?php if (!$fila['hora_egreso']): ?>
+                    <a href="salida.php?id=<?= $fila['id'] ?>">Marcar salida</a>
+                <?php else: ?>
+                    Registrada
+                <?php endif; ?>
+            </td>
+        </tr>
+    <?php endwhile; ?>
+</table>
+CREATE DATABASE IF NOT EXISTS visitas_db;
+USE visitas_db;
+
+CREATE TABLE visitas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50),
+    apellido VARCHAR(50),
+    dni VARCHAR(20),
+    motivo VARCHAR(100),
+    persona_visita VARCHAR(50),
+    hora_ingreso DATETIME,
+    hora_egreso DATETIME NULL
+);
