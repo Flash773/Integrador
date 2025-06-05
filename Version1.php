@@ -29,10 +29,9 @@ if (isset($_POST['registrar'])) {
     echo "Ingreso registrado.";
 }
 ?>
-🔚 4. Marcar salida (registrar_salida.php)
-php
-Copiar
-Editar
+
+Registrar Egreso
+
 <?php include('db.php'); ?>
 <form method="POST" action="">
   <input type="text" name="dni" placeholder="DNI para marcar salida" required>
